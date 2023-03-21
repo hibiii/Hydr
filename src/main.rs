@@ -1,3 +1,5 @@
+mod state;
+
 use std::{
     io::{stdin, stdout, Write},
     process::exit,
