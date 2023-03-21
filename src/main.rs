@@ -1,24 +1,46 @@
+mod file;
 mod state;
 
-use std::{
-    io::{stdin, stdout, Write},
-    process::exit,
-};
+use std::process::ExitCode;
 
-use termion::{color, is_tty, style};
+use crate::state::{Portion, State};
 
-fn main() -> std::io::Result<()> {
-    let mut stdout = stdout();
-    if !is_tty(&stdout) || !is_tty(&stdin()) {
-        eprintln!("hydr requires an interactive terminal");
-        exit(1);
+#[cfg(not(debug_assertions))]
+const FILE_PATH: &str = "~/.config/hydr.yaml";
+#[cfg(debug_assertions)]
+const FILE_PATH: &str = "./testing.yaml";
+
+fn main() -> ExitCode {
+    let state = match file::read_or_default(FILE_PATH) {
+        Err(file::Error::IoError) => {
+            eprintln!("Error: could not open state file, can you open \"{FILE_PATH}\"?");
+            return ExitCode::from(2);
+        }
+        Err(file::Error::SerdeError) => {
+            eprintln!("Error: could not parse state file, check \"{FILE_PATH}\"");
+            return ExitCode::from(3);
+        }
+        Ok(state) => state,
+    };
+
+    println!("{state:?}");
+
+    let state = {
+        let mut o = State::default();
+        o.goal = 2500;
+        o.progress = 420;
+        o.portions.push(Portion {
+            name: "Glass".to_string(),
+            volume: 200,
+        });
+        o
+    };
+
+    match file::save(&state, FILE_PATH) {
+        Ok(_) => ExitCode::SUCCESS,
+        Err(_) => {
+            eprintln!("Error: could not save state file, changes are gone");
+            ExitCode::from(4)
+        }
     }
-    write!(
-        stdout,
-        "Hello, {}Rust{}!\n",
-        color::Fg(color::Rgb(0xff, 0x80, 0x00)),
-        style::Reset,
-    )?;
-
-    Ok(())
 }
