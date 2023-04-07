@@ -36,14 +36,15 @@ fn main() -> ExitCode {
         Ok(state) => state,
     };
 
+    let mut state_modified = false;
     if let Some(old_progress) = state.reset_if_new_day() {
         println!(
             "Reset progress (was {old_progress}, or {}%) because it is a new day.",
             (old_progress as f32 * 100f32) / state.goal as f32
-        )
+        );
+        state_modified = true;
     }
 
-    let mut state_modified = false;
     match command.as_str() {
         "progress" => ui::display_progress(&state),
         "add" => {
@@ -52,6 +53,15 @@ fn main() -> ExitCode {
                 return die(reason);
             }
             state.drink_millis(qty.unwrap());
+            ui::display_progress(&state);
+            state_modified = true;
+        }
+        "remove" => {
+            let qty = ui::parse_millis(args.get(2));
+            if let Err(reason) = qty {
+                return die(reason);
+            }
+            state.undrink_millis(qty.unwrap());
             ui::display_progress(&state);
             state_modified = true;
         }
@@ -72,6 +82,7 @@ fn usage() {
         "Usage:\n",
         "hydr progress\n",
         "hydr add <millis>\n",
+        "hydr remove <millis>\n",
         "hydr version",
     ));
 }

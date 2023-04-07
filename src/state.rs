@@ -37,7 +37,12 @@ impl State {
     }
 
     pub fn drink_millis(&mut self, millis: u32) {
+        // It is unlikely that someone would drink more than 4'294'672 liters in a single day
         self.progress += millis;
+    }
+
+    pub fn undrink_millis(&mut self, millis: u32) {
+        self.progress = self.progress.saturating_sub(millis);
     }
 }
 
