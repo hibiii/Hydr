@@ -35,6 +35,10 @@ impl State {
         let id = portion.name.normalize_id();
         self.portions.insert(id, portion)
     }
+
+    pub fn drink_millis(&mut self, millis: u32) {
+        self.progress += millis;
+    }
 }
 
 impl Default for State {

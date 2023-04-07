@@ -1,5 +1,6 @@
 mod file;
 mod state;
+mod ui;
 mod utili;
 
 use std::{env, process::ExitCode};
@@ -42,29 +43,24 @@ fn main() -> ExitCode {
         )
     }
 
+    let mut state_modified = false;
     match command.as_str() {
-        "progress" => {
-            println!(
-                "Progress: {} of {} ({}%)",
-                state.progress,
-                state.goal,
-                (state.progress as f32 * 100f32) / state.goal as f32
-            )
-        }
+        "progress" => ui::display_progress(&state),
         "add" => {
-            if let Some(qty) = args.get(2) {
-                if let Ok(qty) = qty.parse::<u32>() {
-                    state.progress += qty;
-                } else {
-                    return die("expected a positive number but I don't know what is that");
-                }
-            } else {
-                return die("expected a number but you didn't give me any");
+            let qty = ui::parse_millis(args.get(2));
+            if let Err(reason) = qty {
+                return die(reason);
             }
+            state.drink_millis(qty.unwrap());
+            ui::display_progress(&state);
+            state_modified = true;
         }
         &_ => return die(&format!("unknown command: {command}")),
     }
 
+    if !state_modified {
+        return ExitCode::SUCCESS;
+    }
     match file::save(&state, FILE_PATH) {
         Ok(_) => ExitCode::SUCCESS,
         Err(_) => return die("could not save state file, changes are gone"),
